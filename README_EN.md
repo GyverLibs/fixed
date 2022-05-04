@@ -43,7 +43,7 @@ See example
 void setup() {
   Serial.begin(9600);
   
-  volatile fixed valuee(3, 100); // 0.03
+  volatile fixed value(3, 100); // 0.03
   value *= 100; // 3.0
   value /= 2; // 1.5
   value += toFix(3, 10); // 1.8 (+0.3)
