@@ -37,6 +37,9 @@ fixed(любой тип);
 int32_t getRaw();
 int32_t toInt();
 float toFloat();
+
+static int32_t MAX_INT;
+static int32_t MIN_INT;
 ```
 
 ### Точность
