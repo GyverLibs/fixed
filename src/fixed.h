@@ -1,147 +1,134 @@
-/*
-    Реализация вычислений с фиксированной точкой для Arduino
-    GitHub: https://github.com/GyverLibs/fixed
-        
-    AlexGyver, alex@alexgyver.ru
-    https://alexgyver.ru/
-    MIT License
+#pragma once
+#include <stdint.h>
 
-    Версии:
-    v1.0 - релиз
-*/
+template <uint8_t f_bits>
+class fixedT {
+    constexpr fixedT(int32_t raw, bool) : raw(raw) {}
 
-#ifndef fixed_h
-#define fixed_h
+   public:
+    // ctr
+    constexpr fixedT() : raw(0) {}
+    constexpr fixedT(const fixedT& other) : raw(other.raw) {}
 
-#define FIX_SHIFT 14
-#define FIX_MUL (1L<<FIX_SHIFT)
-#define FIX_UINT(x) ((x) << FIX_SHIFT)
-#define FIX_INT(x) ((x) * FIX_MUL)
-#define FIX_FLOAT(x) ((x) * FIX_MUL)
-#define expandFix(x) x.fix / FIX_MUL
-#define FIX(x) (int32_t&)x
+    template <typename T>
+    constexpr fixedT(T val) : raw(int32_t(val) << f_bits) {}
 
-class fixed {
-public:    
-    int32_t fix = 0;
-    fixed(){}
-    //fixed(fixed& val) {fix = val.fix;}
-    fixed(uint32_t val) {fix = FIX_UINT(val);}
-    fixed(int32_t val) {fix = FIX_INT(val);}
-    fixed(uint16_t val) {fix = FIX_UINT(val);}
-    fixed(int16_t val) {fix = FIX_INT(val);}
-    fixed(uint8_t val) {fix = FIX_UINT(val);}
-    fixed(int8_t val) {fix = FIX_INT(val);}
-    fixed(double val) {fix = FIX_FLOAT(val);}
-    fixed(int32_t val1, int32_t val2) {fix = FIX_INT(val1) / val2;}
+    constexpr fixedT(float val) : raw(val * (1L << f_bits)) {}
+    constexpr fixedT(double val) : fixedT(float(val)) {}
+    constexpr fixedT(long double val) : fixedT(float(val)) {}
 
-    fixed& operator = (uint32_t val) {fix = FIX_UINT(val);}
-    fixed& operator = (int32_t val) {fix = FIX_INT(val);}
-    fixed& operator = (uint16_t val) {fix = FIX_UINT(val);}
-    fixed& operator = (int16_t val) {fix = FIX_INT(val);}
-    fixed& operator = (uint8_t val) {fix = FIX_UINT(val);}
-    fixed& operator = (int8_t val) {fix = FIX_INT(val);}
-    fixed& operator = (double val) {fix = FIX_FLOAT(val);}
+    // export
+    constexpr int32_t getRaw() const { return raw; }
+    constexpr int32_t toInt() const { return raw >> f_bits; }
+    constexpr float toFloat() const { return float(raw) / (1L << f_bits); }
 
-    fixed& operator += (fixed val) {fix += val.fix; return *this;}
-    fixed& operator += (uint32_t val) {fix += FIX_UINT(val); return *this;}
-    fixed& operator += (int32_t val) {fix += FIX_INT(val); return *this;}
-    fixed& operator += (uint16_t val) {fix += FIX_UINT(val); return *this;}
-    fixed& operator += (int16_t val) {fix += FIX_INT(val); return *this;}
-    fixed& operator += (uint8_t val) {fix += FIX_UINT(val); return *this;}
-    fixed& operator += (int8_t val) {fix += FIX_INT(val); return *this;}
-    fixed& operator += (double val) {fix += FIX_FLOAT(val); return *this;}
+    // convert
+    constexpr explicit operator bool() const { return raw; }
+    constexpr explicit operator char() const { return toInt(); }
+    constexpr explicit operator signed char() const { return toInt(); }
+    constexpr explicit operator unsigned char() const { return toInt(); }
+    constexpr explicit operator int() const { return toInt(); }
+    constexpr explicit operator unsigned int() const { return toInt(); }
+    constexpr explicit operator short() const { return toInt(); }
+    constexpr explicit operator unsigned short() const { return toInt(); }
+    constexpr explicit operator long() const { return toInt(); }
+    constexpr explicit operator unsigned long() const { return toInt(); }
+    constexpr explicit operator long long() const { return toInt(); }
+    constexpr explicit operator unsigned long long() const { return toInt(); }
+    constexpr explicit operator float() const { return toFloat(); }
+    constexpr explicit operator double() const { return toFloat(); }
 
-    fixed operator + (fixed val) {return fixed(*this) += val;}
-    fixed operator + (uint32_t val) {return fixed(*this) += val;}
-    fixed operator + (int32_t val) {return fixed(*this) += val;}
-    fixed operator + (uint16_t val) {return fixed(*this) += val;}
-    fixed operator + (int16_t val) {return fixed(*this) += val;}
-    fixed operator + (uint8_t val) {return fixed(*this) += val;}
-    fixed operator + (int8_t val) {return fixed(*this) += val;}
-    fixed operator + (double val) {return fixed(*this) += val;}
+    // math
+    constexpr fixedT operator+(const fixedT& other) const { return fixedT(raw + other.raw, true); }
+    constexpr fixedT operator-(const fixedT& other) const { return fixedT(raw - other.raw, true); }
+    constexpr fixedT operator*(const fixedT& other) const { return fixedT((int64_t(raw) * other.raw) >> f_bits, true); }
+    constexpr fixedT operator/(const fixedT& other) const { return fixedT((int64_t(raw) << f_bits) / other.raw, true); }
 
-    fixed& operator -= (fixed val) {fix -= val.fix; return *this;}
-    fixed& operator -= (uint32_t val) {fix -= FIX_UINT(val); return *this;}
-    fixed& operator -= (int32_t val) {fix -= FIX_INT(val); return *this;}
-    fixed& operator -= (uint16_t val) {fix -= FIX_UINT(val); return *this;}
-    fixed& operator -= (int16_t val) {fix -= FIX_INT(val); return *this;}
-    fixed& operator -= (uint8_t val) {fix -= FIX_UINT(val); return *this;}
-    fixed& operator -= (int8_t val) {fix -= FIX_INT(val); return *this;}
-    fixed& operator -= (double val) {fix -= FIX_FLOAT(val); return *this;}
+    fixedT& operator+=(const fixedT& other) {
+        raw += other.raw;
+        return *this;
+    }
+    fixedT& operator-=(const fixedT& other) {
+        raw -= other.raw;
+        return *this;
+    }
+    fixedT& operator*=(const fixedT& other) {
+        raw = (int64_t(raw) * other.raw) >> f_bits;
+        return *this;
+    }
+    fixedT& operator/=(const fixedT& other) {
+        raw = (int64_t(raw) << f_bits) / other.raw;
+        return *this;
+    }
 
-    fixed operator - (fixed val) {return fixed(*this) -= val;}
-    fixed operator - (uint32_t val) {return fixed(*this) -= val;}
-    fixed operator - (int32_t val) {return fixed(*this) -= val;}
-    fixed operator - (uint16_t val) {return fixed(*this) -= val;}
-    fixed operator - (int16_t val) {return fixed(*this) -= val;}
-    fixed operator - (uint8_t val) {return fixed(*this) -= val;}
-    fixed operator - (int8_t val) {return fixed(*this) -= val;}
-    fixed operator - (double val) {return fixed(*this) -= val;}
+    template <typename T>
+    fixedT& operator*=(const T& val) {
+        raw *= val;
+        return *this;
+    }
+    template <typename T>
+    fixedT& operator/=(const T& val) {
+        raw /= val;
+        return *this;
+    }
 
-    fixed& operator *= (fixed val) {fix *= val.fix; return *this;}
-    fixed& operator *= (uint32_t val) {fix *= (val); return *this;}
-    fixed& operator *= (int32_t val) {fix *= (val); return *this;}
-    fixed& operator *= (uint16_t val) {fix *= (val); return *this;}
-    fixed& operator *= (int16_t val) {fix *= (val); return *this;}
-    fixed& operator *= (uint8_t val) {fix *= (val); return *this;}
-    fixed& operator *= (int8_t val) {fix *= (val); return *this;}
-    fixed& operator *= (double val) {fix *= (val); return *this;}
+    constexpr fixedT operator-() const {
+        return fixedT(-raw, true);
+    }
 
-    fixed operator * (fixed val) {return fixed(*this) *= val;}
-    fixed operator * (uint32_t val) {return fixed(*this) *= val;}
-    fixed operator * (int32_t val) {return fixed(*this) *= val;}
-    fixed operator * (uint16_t val) {return fixed(*this) *= val;}
-    fixed operator * (int16_t val) {return fixed(*this) *= val;}
-    fixed operator * (uint8_t val) {return fixed(*this) *= val;}
-    fixed operator * (int8_t val) {return fixed(*this) *= val;}
-    fixed operator * (double val) {return fixed(*this) *= val;}
+    // compare
+    constexpr bool operator==(const fixedT& other) const { return raw == other.raw; }
+    constexpr bool operator!=(const fixedT& other) const { return raw != other.raw; }
+    constexpr bool operator<(const fixedT& other) const { return raw < other.raw; }
+    constexpr bool operator<=(const fixedT& other) const { return raw <= other.raw; }
+    constexpr bool operator>(const fixedT& other) const { return raw > other.raw; }
+    constexpr bool operator>=(const fixedT& other) const { return raw >= other.raw; }
 
-    fixed& operator /= (fixed val) {fix /= val.fix; return *this;}
-    fixed& operator /= (uint32_t val) {fix /= (val); return *this;}
-    fixed& operator /= (int32_t val) {fix /= (val); return *this;}
-    fixed& operator /= (uint16_t val) {fix /= (val); return *this;}
-    fixed& operator /= (int16_t val) {fix /= (val); return *this;}
-    fixed& operator /= (uint8_t val) {fix /= (val); return *this;}
-    fixed& operator /= (int8_t val) {fix /= (val); return *this;}
-    fixed& operator /= (double val) {fix /= (val); return *this;}
+    // static
+    static constexpr int32_t MAX_INT = (1L << (32 - f_bits - 1)) - 1;
+    static constexpr int32_t MIN_INT = -(1L << (32 - f_bits - 1));
 
-    fixed operator / (fixed val) {return fixed(*this) /= val;}
-    fixed operator / (uint32_t val) {return fixed(*this) /= val;}
-    fixed operator / (int32_t val) {return fixed(*this) /= val;}
-    fixed operator / (uint16_t val) {return fixed(*this) /= val;}
-    fixed operator / (int16_t val) {return fixed(*this) /= val;}
-    fixed operator / (uint8_t val) {return fixed(*this) /= val;}
-    fixed operator / (int8_t val) {return fixed(*this) /= val;}
-    fixed operator / (double val) {return fixed(*this) /= val;}
-
-    fixed& operator %= (fixed val) {fix %= val.fix; return *this;}
-    fixed& operator %= (uint32_t val) {fix %= FIX_UINT(val); return *this;}
-    fixed& operator %= (int32_t val) {fix %= FIX_INT(val); return *this;}
-    fixed& operator %= (uint16_t val) {fix %= FIX_UINT(val); return *this;}
-    fixed& operator %= (int16_t val) {fix %= FIX_INT(val); return *this;}
-    fixed& operator %= (uint8_t val) {fix %= FIX_UINT(val); return *this;}
-    fixed& operator %= (int8_t val) {fix %= FIX_INT(val); return *this;}
-
-    fixed operator % (fixed val) {return fixed(*this) %= val;}
-    fixed operator % (uint32_t val) {return fixed(*this) %= val;}
-    fixed operator % (int32_t val) {return fixed(*this) %= val;}
-    fixed operator % (uint16_t val) {return fixed(*this) %= val;}
-    fixed operator % (int16_t val) {return fixed(*this) %= val;}
-    fixed operator % (uint8_t val) {return fixed(*this) %= val;}
-    fixed operator % (int8_t val) {return fixed(*this) %= val;}
-
-    int32_t toInt() {return (fix >= 0) ? (fix >> FIX_SHIFT) : ((int32_t)fix / FIX_MUL);}
-    float toFloat() {return (float)fix / FIX_MUL;}  
-private:
+    int32_t raw;
 };
 
-fixed toFix(double val) {fixed buf(val); return buf;}
-fixed toFix(uint32_t val) {fixed buf(val); return buf;}
-fixed toFix(int32_t val) {fixed buf(val); return buf;}
-fixed toFix(uint16_t val) {fixed buf(val); return buf;}
-fixed toFix(int16_t val) {fixed buf(val); return buf;}
-fixed toFix(uint8_t val) {fixed buf(val); return buf;}
-fixed toFix(int8_t val) {fixed buf(val); return buf;}
-fixed toFix(int val1, int val2) {fixed buf(val1, val2); return buf;}
-#endif
+// operators f-f
+template <uint8_t f_bits>
+inline constexpr fixedT<f_bits> operator+(const fixedT<f_bits>& lhs, const fixedT<f_bits>& rhs) { return fixedT<f_bits>(lhs.raw + rhs.raw, true); }
+
+template <uint8_t f_bits>
+inline constexpr fixedT<f_bits> operator-(const fixedT<f_bits>& lhs, const fixedT<f_bits>& rhs) { return fixedT<f_bits>(lhs.raw - rhs.raw, true); }
+
+template <uint8_t f_bits>
+inline constexpr fixedT<f_bits> operator*(const fixedT<f_bits>& lhs, const fixedT<f_bits>& rhs) { return fixedT<f_bits>((int64_t(lhs.raw) * rhs.raw) >> f_bits, true); }
+
+template <uint8_t f_bits>
+inline constexpr fixedT<f_bits> operator/(const fixedT<f_bits>& lhs, const fixedT<f_bits>& rhs) { return fixedT<f_bits>((int64_t(lhs.raw) << f_bits) / rhs.raw, true); }
+
+// operators T-f
+template <uint8_t f_bits, typename T>
+inline constexpr fixedT<f_bits> operator+(T lhs, const fixedT<f_bits>& rhs) { return fixedT<f_bits>(lhs) + rhs; }
+
+template <uint8_t f_bits, typename T>
+inline constexpr fixedT<f_bits> operator-(T lhs, const fixedT<f_bits>& rhs) { return fixedT<f_bits>(lhs) - rhs; }
+
+template <uint8_t f_bits, typename T>
+inline constexpr fixedT<f_bits> operator*(T lhs, const fixedT<f_bits>& rhs) { return fixedT<f_bits>(lhs) * rhs; }
+
+template <uint8_t f_bits, typename T>
+inline constexpr fixedT<f_bits> operator/(T lhs, const fixedT<f_bits>& rhs) { return fixedT<f_bits>(lhs) / rhs; }
+
+// fixed8
+using fixed8 = fixedT<8>;
+constexpr fixed8 operator"" _fx8(unsigned long long value) { return fixed8(value); }
+constexpr fixed8 operator"" _fx8(long double value) { return fixed8(value); }
+
+// fixed16
+using fixed = fixedT<16>;  // legacy
+using fixed16 = fixedT<16>;
+constexpr fixed16 operator"" _fx16(unsigned long long value) { return fixed16(value); }
+constexpr fixed16 operator"" _fx16(long double value) { return fixed16(value); }
+
+// fixed24
+using fixed24 = fixedT<24>;
+constexpr fixed24 operator"" _fx24(unsigned long long value) { return fixed24(value); }
+constexpr fixed24 operator"" _fx24(long double value) { return fixed24(value); }
