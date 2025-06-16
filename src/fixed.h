@@ -1,6 +1,14 @@
 #pragma once
 #include <stdint.h>
 
+#ifdef FIXED_USE_64
+#define _FIX_MULT(x, y, bits) ((int64_t(x) * y) >> bits)
+#define _FIX_DIV(x, y, bits) ((int64_t(x) << bits) / y)
+#else
+#define _FIX_MULT(x, y, bits) ((x * y) >> bits)
+#define _FIX_DIV(x, y, bits) ((x << bits) / y)
+#endif
+
 template <uint8_t f_bits>
 class fixedT {
     constexpr fixedT(int32_t raw, bool) : raw(raw) {}
@@ -24,26 +32,38 @@ class fixedT {
 
     // convert
     constexpr explicit operator bool() const { return raw; }
-    constexpr explicit operator char() const { return toInt(); }
-    constexpr explicit operator signed char() const { return toInt(); }
-    constexpr explicit operator unsigned char() const { return toInt(); }
-    constexpr explicit operator int() const { return toInt(); }
-    constexpr explicit operator unsigned int() const { return toInt(); }
-    constexpr explicit operator short() const { return toInt(); }
-    constexpr explicit operator unsigned short() const { return toInt(); }
-    constexpr explicit operator long() const { return toInt(); }
-    constexpr explicit operator unsigned long() const { return toInt(); }
-    constexpr explicit operator long long() const { return toInt(); }
-    constexpr explicit operator unsigned long long() const { return toInt(); }
-    constexpr explicit operator float() const { return toFloat(); }
-    constexpr explicit operator double() const { return toFloat(); }
+    constexpr operator char() const { return toInt(); }
+    constexpr operator signed char() const { return toInt(); }
+    constexpr operator unsigned char() const { return toInt(); }
+    constexpr operator int() const { return toInt(); }
+    constexpr operator unsigned int() const { return toInt(); }
+    constexpr operator short() const { return toInt(); }
+    constexpr operator unsigned short() const { return toInt(); }
+    constexpr operator long() const { return toInt(); }
+    constexpr operator unsigned long() const { return toInt(); }
+    constexpr operator float() const { return toFloat(); }
+    constexpr operator double() const { return toFloat(); }
 
     // math
     constexpr fixedT operator+(const fixedT& other) const { return fixedT(raw + other.raw, true); }
     constexpr fixedT operator-(const fixedT& other) const { return fixedT(raw - other.raw, true); }
-    constexpr fixedT operator*(const fixedT& other) const { return fixedT((int64_t(raw) * other.raw) >> f_bits, true); }
-    constexpr fixedT operator/(const fixedT& other) const { return fixedT((int64_t(raw) << f_bits) / other.raw, true); }
+    constexpr fixedT operator*(const fixedT& other) const { return fixedT(_FIX_MULT(raw, other.raw, f_bits), true); }
+    constexpr fixedT operator/(const fixedT& other) const { return fixedT(_FIX_DIV(raw, other.raw, f_bits), true); }
 
+    // math
+    template <typename T>
+    constexpr fixedT operator+(const T val) const { return *this + fixedT(val); }
+
+    template <typename T>
+    constexpr fixedT operator-(const T val) const { return *this - fixedT(val); }
+
+    template <typename T>
+    constexpr fixedT operator*(const T val) const { return *this * fixedT(val); }
+
+    template <typename T>
+    constexpr fixedT operator/(const T val) const { return *this / fixedT(val); }
+
+    // math
     fixedT& operator+=(const fixedT& other) {
         raw += other.raw;
         return *this;
@@ -53,21 +73,21 @@ class fixedT {
         return *this;
     }
     fixedT& operator*=(const fixedT& other) {
-        raw = (int64_t(raw) * other.raw) >> f_bits;
+        raw = _FIX_MULT(raw, other.raw, f_bits);
         return *this;
     }
     fixedT& operator/=(const fixedT& other) {
-        raw = (int64_t(raw) << f_bits) / other.raw;
+        raw = _FIX_DIV(raw, other.raw, f_bits);
         return *this;
     }
 
     template <typename T>
-    fixedT& operator*=(const T& val) {
+    fixedT& operator*=(const T val) {
         raw *= val;
         return *this;
     }
     template <typename T>
-    fixedT& operator/=(const T& val) {
+    fixedT& operator/=(const T val) {
         raw /= val;
         return *this;
     }
@@ -84,6 +104,19 @@ class fixedT {
     constexpr bool operator>(const fixedT& other) const { return raw > other.raw; }
     constexpr bool operator>=(const fixedT& other) const { return raw >= other.raw; }
 
+    template <typename T>
+    constexpr bool operator==(const T val) const { return *this == fixedT(val); }
+    template <typename T>
+    constexpr bool operator!=(const T val) const { return *this != fixedT(val); }
+    template <typename T>
+    constexpr bool operator<(const T val) const { return *this < fixedT(val); }
+    template <typename T>
+    constexpr bool operator<=(const T val) const { return *this <= fixedT(val); }
+    template <typename T>
+    constexpr bool operator>(const T val) const { return *this > fixedT(val); }
+    template <typename T>
+    constexpr bool operator>=(const T val) const { return *this >= fixedT(val); }
+
     // static
     static constexpr int32_t MAX_INT = (1L << (32 - f_bits - 1)) - 1;
     static constexpr int32_t MIN_INT = -(1L << (32 - f_bits - 1));
@@ -99,10 +132,10 @@ template <uint8_t f_bits>
 inline constexpr fixedT<f_bits> operator-(const fixedT<f_bits>& lhs, const fixedT<f_bits>& rhs) { return fixedT<f_bits>(lhs.raw - rhs.raw, true); }
 
 template <uint8_t f_bits>
-inline constexpr fixedT<f_bits> operator*(const fixedT<f_bits>& lhs, const fixedT<f_bits>& rhs) { return fixedT<f_bits>((int64_t(lhs.raw) * rhs.raw) >> f_bits, true); }
+inline constexpr fixedT<f_bits> operator*(const fixedT<f_bits>& lhs, const fixedT<f_bits>& rhs) { return fixedT<f_bits>(_FIX_MULT(lhs.raw, rhs.raw, f_bits), true); }
 
 template <uint8_t f_bits>
-inline constexpr fixedT<f_bits> operator/(const fixedT<f_bits>& lhs, const fixedT<f_bits>& rhs) { return fixedT<f_bits>((int64_t(lhs.raw) << f_bits) / rhs.raw, true); }
+inline constexpr fixedT<f_bits> operator/(const fixedT<f_bits>& lhs, const fixedT<f_bits>& rhs) { return fixedT<f_bits>(_FIX_DIV(lhs.raw, rhs.raw, f_bits), true); }
 
 // operators T-f
 template <uint8_t f_bits, typename T>
