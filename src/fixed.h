@@ -58,10 +58,16 @@ class fixedT {
     constexpr fixedT operator-(const T val) const { return *this - fixedT(val); }
 
     template <typename T>
-    constexpr fixedT operator*(const T val) const { return *this * fixedT(val); }
+    constexpr fixedT operator*(const T val) const { return fixedT(raw * val, true); }
 
     template <typename T>
-    constexpr fixedT operator/(const T val) const { return *this / fixedT(val); }
+    constexpr fixedT operator/(const T val) const { return fixedT(raw / val, true); }
+
+    // template <typename T>
+    // constexpr fixedT operator*(const T val) const { return *this * fixedT(val); }
+
+    // template <typename T>
+    // constexpr fixedT operator/(const T val) const { return *this / fixedT(val); }
 
     // math
     fixedT& operator+=(const fixedT& other) {
