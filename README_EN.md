@@ -55,14 +55,14 @@ By default.`fixed`It has 16 bits for integer and 16 bits for fractional, but the
 | `fixed24`             | 24            | `0.00000006`   | `128`                |
 
 ### Overflow * and /
-By default, division and multiplication (** there is no addition and subtraction of this problem**) are performed in a 32-bit cell, which is very fast, but easily overflowed - you need to choose the correct size of the whole part for your range of values. You can switch to 64-bit computing:
+For formats with fewer than 16 fractional bits, division and multiplication use a fast 32-bit intermediate value by default, which may overflow. `fixed16`, `fixed24`, and more precise formats automatically use 64-bit intermediates. You can force 64-bit calculations for every format:
 
 ```cpp
 #define FIXED_USE_64
 #include <fixed.h>
 ```
 
-In this case, all computations will be correct, but on some platforms, the code size and execution rate will be almost equal to that of the other.`float`And a fixed point would lose its meaning.
+This prevents intermediate overflow, but the result must still fit the selected format. On some platforms, code size and execution speed may become close to `float`.
 
 ### Literatures
 In the program can be added to the number of literals, for example.`3.14_fx8`number`3.14`straight-up`fixed8`, i.e. analogue call`fixed8(3.14)`eh`123_fx16`- in format`fixed16`.
